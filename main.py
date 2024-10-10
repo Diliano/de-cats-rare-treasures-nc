@@ -1,5 +1,5 @@
 '''This module is the entrypoint for the `Cat's Rare Treasures` FastAPI app.'''
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Query
 from db.connection import connect_to_db
 from pg8000.native import DatabaseError, identifier
 
@@ -9,6 +9,11 @@ app = FastAPI()
 
 @app.get("/api/treasures")
 def get_all_treasures(sort_by: str = "age"):
+    if not sort_by:
+        sort_by = "age"
+    elif sort_by not in {"age", "cost_at_auction", "treasure_name"}:
+        raise HTTPException(status_code=400, detail=f"Invalid sort_by value ({sort_by}) provided")
+    
     db = None
     try:
         db = connect_to_db()

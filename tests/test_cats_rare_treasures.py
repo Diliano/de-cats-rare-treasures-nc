@@ -64,6 +64,8 @@ class TestGetAllTreasures:
     Error handling considerations for GET "/api/treasures":
     - path is incorrect; 404 handled by FastAPI
     - method does not exist; 405 handled by FastAPI
+    - parameter key, with empty value; implemented default to "age" column 
+    - parameter not allowed; custom 400 implemented
     - db error; custom 500 implemented
     """
     def test_404_if_path_is_incorrect(self, client):
@@ -78,6 +80,13 @@ class TestGetAllTreasures:
         assert response.status_code == 405
         assert response.json() == {
             "detail": "Method Not Allowed"
+        }
+
+    def test_400_if_specified_sort_column_not_allowed(self, client):
+        response = client.get("/api/treasures/?sort_by=thisdoesnotexist")
+        assert response.status_code == 400
+        assert response.json() == {
+            "detail": "Invalid sort_by value (thisdoesnotexist) provided"
         }
 
     @pytest.mark.xfail
