@@ -12,14 +12,14 @@ def reset_db():
 
 
 class TestGetAllTreasures:
-    """
-    Test verifies:
-    - status code
-    - length of resulting list of treasure dicts
-    - treasure dicts content match the data types expected
-    - age of first treasure is lower than age of last treasure in the list
-    """
     def test_200_returns_formatted_treasures(self):
+        """
+        Test verifies:
+        - status code
+        - length of resulting list of treasure dicts
+        - treasure dicts content match the data types expected
+        - age of first treasure is lower than age of last treasure in the list
+        """
         client = TestClient(app)
         response = client.get("/api/treasures")
         body = response.json()
@@ -33,3 +33,38 @@ class TestGetAllTreasures:
             assert type(treasure["cost_at_auction"]) == float
             assert type(treasure["shop_name"]) == str
         assert body["treasures"][0]["age"] < body["treasures"][-1]["age"]
+
+    """
+    Error handling considerations for GET "/api/treasures":
+    - path is incorrect; 404 handled by FastAPI
+    - method does not exist; 405 handled by FastAPI
+    - db error; custom 500 implemented
+    """
+    def test_404_if_path_is_incorrect(self):
+        client = TestClient(app)
+        response = client.get("/api/treasure")
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "Not Found"
+        }
+
+    def test_405_if_method_does_not_exist(self):
+        client = TestClient(app)
+        response = client.patch("/api/treasures")
+        assert response.status_code == 405
+        assert response.json() == {
+            "detail": "Method Not Allowed"
+        }
+
+    @pytest.mark.xfail
+    def test_500_custom_message_if_db_error(self):
+        """
+        - Tested with a manual error (typo in SQL query)
+        - Marked as expected failure as the typo has been fixed for benefit of other tests
+        """
+        client = TestClient(app)
+        response = client.get("/api/treasures")
+        assert response.status_code == 500
+        assert response.json() == {
+            "detail": "Server error: logged for investigation"
+        }
