@@ -16,7 +16,7 @@ def client():
 
 
 class TestGetAllTreasures:
-    def test_200_returns_formatted_treasures(self, client):
+    def test_200_returns_formatted_treasures_with_default_sort_by_age(self, client):
         """
         Test verifies:
         - status code
@@ -37,8 +37,29 @@ class TestGetAllTreasures:
             assert type(treasure["cost_at_auction"]) == float
             assert type(treasure["shop_name"]) == str
         assert ages == sorted(ages)
-        
 
+    def test_200_returns_formatted_treasures_with_specified_sort_by_column(self, client):
+        """
+        Test verifies:
+        - status code
+        - length of resulting list of treasure dicts
+        - treasure dicts content match the data types expected
+        - treasures are sorted by the specified column
+        """
+        response = client.get("/api/treasures?sort_by=cost_at_auction")
+        treasures = response.json()["treasures"]
+        costs_at_auction = [treasure["cost_at_auction"] for treasure in treasures]
+        assert response.status_code == 200
+        assert len(treasures) == 26
+        for treasure in treasures:
+            assert type(treasure["treasure_id"]) == int
+            assert type(treasure["treasure_name"]) == str
+            assert type(treasure["colour"]) == str
+            assert type(treasure["age"]) == int
+            assert type(treasure["cost_at_auction"]) == float
+            assert type(treasure["shop_name"]) == str
+        assert costs_at_auction == sorted(costs_at_auction)
+        
     """
     Error handling considerations for GET "/api/treasures":
     - path is incorrect; 404 handled by FastAPI

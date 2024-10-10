@@ -1,14 +1,14 @@
 '''This module is the entrypoint for the `Cat's Rare Treasures` FastAPI app.'''
 from fastapi import FastAPI, Request, HTTPException
 from db.connection import connect_to_db
-from pg8000.native import DatabaseError
+from pg8000.native import DatabaseError, identifier
 
 
 app = FastAPI()
 
 
 @app.get("/api/treasures")
-def get_all_treasures():
+def get_all_treasures(sort_by: str = "age"):
     db = None
     try:
         db = connect_to_db()
@@ -18,7 +18,7 @@ def get_all_treasures():
                 treasures.age, treasures.cost_at_auction, shops.shop_name
             FROM treasures
             JOIN shops ON treasures.shop_id = shops.shop_id
-            ORDER BY treasures.age;
+            ORDER BY treasures.{identifier(sort_by)};
         """
         treasures_data = db.run(sql=select_query)
         column_names = [c["name"] for c in db.columns]
