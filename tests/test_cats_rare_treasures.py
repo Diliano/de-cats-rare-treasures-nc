@@ -18,21 +18,23 @@ class TestGetAllTreasures:
         - status code
         - length of resulting list of treasure dicts
         - treasure dicts content match the data types expected
-        - age of first treasure is lower than age of last treasure in the list
+        - treasures are sorted by age (ascending)
         """
         client = TestClient(app)
         response = client.get("/api/treasures")
-        body = response.json()
+        treasures = response.json()["treasures"]
+        ages = [treasure["age"] for treasure in treasures]
         assert response.status_code == 200
-        assert len(body["treasures"]) == 26
-        for treasure in body["treasures"]:
+        assert len(treasures) == 26
+        for treasure in treasures:
             assert type(treasure["treasure_id"]) == int
             assert type(treasure["treasure_name"]) == str
             assert type(treasure["colour"]) == str
             assert type(treasure["age"]) == int
             assert type(treasure["cost_at_auction"]) == float
             assert type(treasure["shop_name"]) == str
-        assert body["treasures"][0]["age"] < body["treasures"][-1]["age"]
+        assert ages == sorted(ages)
+        
 
     """
     Error handling considerations for GET "/api/treasures":
