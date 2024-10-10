@@ -10,9 +10,13 @@ import pytest
 def reset_db():
     seed_db(env='test')
 
+@pytest.fixture()
+def client():
+    return TestClient(app)
+
 
 class TestGetAllTreasures:
-    def test_200_returns_formatted_treasures(self):
+    def test_200_returns_formatted_treasures(self, client):
         """
         Test verifies:
         - status code
@@ -20,7 +24,6 @@ class TestGetAllTreasures:
         - treasure dicts content match the data types expected
         - treasures are sorted by age (ascending)
         """
-        client = TestClient(app)
         response = client.get("/api/treasures")
         treasures = response.json()["treasures"]
         ages = [treasure["age"] for treasure in treasures]
@@ -42,16 +45,14 @@ class TestGetAllTreasures:
     - method does not exist; 405 handled by FastAPI
     - db error; custom 500 implemented
     """
-    def test_404_if_path_is_incorrect(self):
-        client = TestClient(app)
+    def test_404_if_path_is_incorrect(self, client):
         response = client.get("/api/treasure")
         assert response.status_code == 404
         assert response.json() == {
             "detail": "Not Found"
         }
 
-    def test_405_if_method_does_not_exist(self):
-        client = TestClient(app)
+    def test_405_if_method_does_not_exist(self, client):
         response = client.patch("/api/treasures")
         assert response.status_code == 405
         assert response.json() == {
@@ -59,12 +60,11 @@ class TestGetAllTreasures:
         }
 
     @pytest.mark.xfail
-    def test_500_custom_message_if_db_error(self):
+    def test_500_custom_message_if_db_error(self, client):
         """
         - Tested with a manual error (typo in SQL query)
         - Marked as expected failure as the typo has been fixed for benefit of other tests
         """
-        client = TestClient(app)
         response = client.get("/api/treasures")
         assert response.status_code == 500
         assert response.json() == {
