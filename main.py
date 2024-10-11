@@ -95,6 +95,31 @@ def add_new_treasure(new_treasure: NewTreasure):
             db.close()
 
 
+class UpdatedTreasurePrice(BaseModel):
+    cost_at_auction: float
+
+@app.patch("/api/treasures/{treasure_id}")
+def update_treasure_price(treasure_id: int, updated_treasure_price: UpdatedTreasurePrice):
+    db = None
+    try:
+        db = connect_to_db()
+
+        update_query = f"""
+            UPDATE treasures
+            SET cost_at_auction = {literal(updated_treasure_price.cost_at_auction)}
+            WHERE treasure_id = {literal(treasure_id)}
+            RETURNING *;
+        """
+
+        treasure_data = db.run(sql=update_query)[0]
+        column_names = [c["name"] for c in db.columns]
+        formatted_data = dict(zip(column_names, treasure_data))
+        return {"treasure": formatted_data}
+    finally:    
+        if db:
+            db.close()
+
+
 @app.exception_handler(DatabaseError)
 def handle_db_error(request: Request, exc: DatabaseError):
     print(exc)

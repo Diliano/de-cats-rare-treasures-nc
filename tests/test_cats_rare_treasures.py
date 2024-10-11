@@ -169,7 +169,7 @@ class TestGetAllTreasures:
 
 
 class TestPostNewTreasure:
-    def test_200_adds_new_treasure_and_returns_confirmation(self, client):
+    def test_201_adds_new_treasure_and_returns_confirmation(self, client):
         """
         Test verifies:
         - status code
@@ -179,7 +179,7 @@ class TestPostNewTreasure:
             "treasure_name": "new-treasure",
             "colour": "saffron",
             "age": 30,
-            "cost_at_auction": "70.99",
+            "cost_at_auction": 70.99,
             "shop_id": 4
         })
         assert response.status_code == 201
@@ -220,7 +220,7 @@ class TestPostNewTreasure:
             "treasure_name": 100, # int, rather than str
             "colour": "saffron",
             "age": 30,
-            "cost_at_auction": "70.99",
+            "cost_at_auction": 70.99,
             "shop_id": 4
         })
         assert response.status_code == 422
@@ -242,10 +242,33 @@ class TestPostNewTreasure:
             "treasure_name": "new-treasure",
             "colour": "saffron",
             "age": 30,
-            "cost_at_auction": "70.99",
+            "cost_at_auction": 70.99,
             "shop_id": 4
         })
         assert response.status_code == 500
         assert response.json() == {
             "detail": "Server error: logged for investigation"
+        }
+
+
+class TestPatchUpdateTreasurePrice:
+    def test_200_updates_treasure_price_and_returns_confirmation(self, client):
+        """
+        Test verifies:
+        - status code
+        - treasure cost has been updated
+        """
+        response = client.patch("/api/treasures/1", json={
+            "cost_at_auction": 15
+        })
+        assert response.status_code == 200
+        assert response.json() == {
+            "treasure": {
+                "treasure_id": 1,
+                "treasure_name": "treasure-a",
+                "colour": "turquoise",
+                "age": 200,
+                "cost_at_auction": 15,
+                "shop_id": 1
+            }
         }
