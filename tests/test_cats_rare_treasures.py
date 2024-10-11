@@ -98,14 +98,8 @@ class TestGetAllTreasures:
             assert type(treasure["shop_name"]) == str
         
     """
-    Error handling considerations for GET "/api/treasures" are tested below, except for:
-    - sort_by parameter key, with empty value; implemented default to "age" column 
-    - order parameter key, with empty value; implemented default to "asc" 
-
-    These two cases are handled by the successful implementation tests above
-    """
+    Error handling considerations for GET "/api/treasures" are tested below:
     
-    """
     Path is incorrect; 404 handled by FastAPI
     """
     def test_404_if_path_is_incorrect(self, client):
@@ -126,34 +120,37 @@ class TestGetAllTreasures:
         }
 
     """
-    Sort_by parameter not allowed; custom 400 implemented
+    Sort by parameter empty/invalid; 422 handled by FastAPI
     """
-    def test_400_if_specified_sort_column_not_allowed(self, client):
+    def test_422_if_specified_sort_column_not_allowed(self, client):
+        response = client.get("/api/treasures?sort_by=")
+        assert response.status_code == 422
+
+        response = client.get("/api/treasures?sort_by=treasure_id")
+        assert response.status_code == 422
+
         response = client.get("/api/treasures?sort_by=thisdoesnotexist")
-        assert response.status_code == 400
-        assert response.json() == {
-            "detail": "Invalid sort_by value (thisdoesnotexist) provided"
-        }
+        assert response.status_code == 422
 
     """
-    Order parameter not allowed; custom 400 implemented
+    Order parameter empty/invalid; 422 handled by FastAPI
     """
-    def test_400_if_specified_order_not_allowed(self, client):
+    def test_422_if_specified_order_not_allowed(self, client):
+        response = client.get("/api/treasures?order=")
+        assert response.status_code == 422
+
         response = client.get("/api/treasures?order=notallowed")
-        assert response.status_code == 400
-        assert response.json() == {
-            "detail": "Invalid order value (notallowed) provided"
-        }
+        assert response.status_code == 422
 
     """
-    Colour parameter non-existent; custom 400 implemented
+    Colour parameter empty/invalid; 422 handled by FastAPI
     """
-    def test_400_if_specified_colour_does_not_exist(self, client):
+    def test_422_if_specified_colour_does_not_exist(self, client):
+        response = client.get("/api/treasures?colour=")
+        assert response.status_code == 422
+
         response = client.get("/api/treasures?colour=notacolour")
-        assert response.status_code == 400
-        assert response.json() == {
-            "detail": "Invalid colour value (notacolour) provided"
-        }
+        assert response.status_code == 422
 
     """
     db error; custom 500 implemented
@@ -172,7 +169,7 @@ class TestGetAllTreasures:
 
 
 class TestPostNewTreasure:
-    def test_200_adds_new_treasure(self, client):
+    def test_200_adds_new_treasure_and_returns_confirmation(self, client):
         """
         Test verifies:
         - status code

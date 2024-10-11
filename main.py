@@ -1,6 +1,7 @@
 '''This module is the entrypoint for the `Cat's Rare Treasures` FastAPI app.'''
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
+from enum import Enum
 from db.connection import connect_to_db
 from pg8000.native import DatabaseError, identifier, literal
 
@@ -8,17 +9,32 @@ from pg8000.native import DatabaseError, identifier, literal
 app = FastAPI()
 
 
+class SortBy(Enum):
+    age = "age"
+    cost_at_auction = "cost_at_auction"
+    treasure_name = "treasure_name"
+
+class Order(Enum):
+    asc = "asc"
+    desc = "desc"
+
+class Colour(Enum):
+    turquoise = "turquoise"
+    mikado = "mikado"
+    ivory = "ivory"
+    onyx = "onyx"
+    carmine = "carmine"
+    cobalt = "cobalt"
+    magenta = "magenta"
+    gold = "gold"
+    azure = "azure"
+    silver = "silver"
+    khaki = "khaki"
+    saffron = "saffron"
+    burgundy = "burgundy"
+
 @app.get("/api/treasures")
-def get_all_treasures(sort_by: str = "age", order: str = "asc", colour: str = None):
-    if not sort_by:
-        sort_by = "age"
-    elif sort_by not in {"age", "cost_at_auction", "treasure_name"}:
-        handle_invalid_query("sort_by", sort_by)
-    
-    if not order:
-        order = "ASC"
-    elif order not in {"asc", "desc"}:
-        handle_invalid_query("order", order)
+def get_all_treasures(sort_by: SortBy = SortBy.age, order: Order = Order.asc, colour: Colour = None):
     
     db = None
 
@@ -34,15 +50,11 @@ def get_all_treasures(sort_by: str = "age", order: str = "asc", colour: str = No
         """
 
         if colour:
-            select_query += f"""WHERE colour = {literal(colour)}"""
+            select_query += f"""WHERE colour = {literal(colour.value)}"""
 
-        select_query += f"""ORDER BY treasures.{identifier(sort_by)} {identifier(order)};"""
+        select_query += f"""ORDER BY treasures.{identifier(sort_by.value)} {identifier(order.value)};"""
 
         treasures_data = db.run(sql=select_query)
-
-        if not treasures_data:
-            handle_invalid_query("colour", colour)
-
         column_names = [c["name"] for c in db.columns]
         formatted_data = [dict(zip(column_names, treasure)) for treasure in treasures_data]
         return {"treasures": formatted_data}
@@ -87,6 +99,3 @@ def add_new_treasure(new_treasure: NewTreasure):
 def handle_db_error(request: Request, exc: DatabaseError):
     print(exc)
     raise HTTPException(status_code=500, detail="Server error: logged for investigation")
-
-def handle_invalid_query(query_key, query_value):
-    raise HTTPException(status_code=400, detail=f"Invalid {query_key} value ({query_value}) provided")
