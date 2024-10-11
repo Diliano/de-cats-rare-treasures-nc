@@ -196,3 +196,59 @@ class TestPostNewTreasure:
                 "shop_id": 4
             }
         }
+
+    """
+    Error handling considerations for POST "/api/treasures" are tested below, except for:
+    - Method does not exist; tested above for GET "/api/treasures" as base endpoint is the same
+    """
+
+    """
+    Path is incorrect; 404 default handled by FastAPI
+    """
+    def test_404_if_path_is_incorrect(self, client):
+        response = client.post("/api/treasu")
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "Not Found"
+        }
+
+    """
+    Parameter/containing parameters is wrong type; 422 default handled by FastAPI
+    """
+    def test_422_if_request_body_is_wrong_type(self, client):
+        response = client.post("/api/treasures", json="hi")
+        assert response.status_code == 422
+
+        response = client.post("/api/treasures", json={
+            "treasure_name": 100, # int, rather than str
+            "colour": "saffron",
+            "age": 30,
+            "cost_at_auction": "70.99",
+            "shop_id": 4
+        })
+        assert response.status_code == 422
+
+    """
+    Valid, but empty input; 422 default handled by FastAPI
+    """
+    def test_422_if_request_body_is_wrong_type(self, client):
+        response = client.post("/api/treasures", json={})
+        assert response.status_code == 422
+
+    @pytest.mark.xfail
+    def test_500_if_db_error(self, client):
+        """
+        - Tested with a manual error (typo in SQL query)
+        - Marked as expected failure as the typo has been fixed for benefit of other tests
+        """
+        response = client.post("/api/treasures", json={
+            "treasure_name": "new-treasure",
+            "colour": "saffron",
+            "age": 30,
+            "cost_at_auction": "70.99",
+            "shop_id": 4
+        })
+        assert response.status_code == 500
+        assert response.json() == {
+            "detail": "Server error: logged for investigation"
+        }

@@ -60,21 +60,27 @@ class NewTreasure(BaseModel):
 
 @app.post("/api/treasures", status_code=201)
 def add_new_treasure(new_treasure: NewTreasure):
-    db = connect_to_db()
+    db = None
 
-    insert_query = f"""
-        INSERT INTO treasures
-            (treasure_name, colour, age, cost_at_auction, shop_id)
-        VALUES
-            ({literal(new_treasure.treasure_name)}, {literal(new_treasure.colour)}, {literal(new_treasure.age)},
-            {literal(new_treasure.cost_at_auction)}, {literal(new_treasure.shop_id)})
-        RETURNING *;
-    """
+    try:
+        db = connect_to_db()
 
-    treasure_data = db.run(sql=insert_query)[0]
-    column_names = [c["name"] for c in db.columns]
-    formatted_data = dict(zip(column_names, treasure_data))
-    return {"treasure": formatted_data}
+        insert_query = f"""
+            INSERT INTO treasures
+                (treasure_name, colour, age, cost_at_auction, shop_id)
+            VALUES
+                ({literal(new_treasure.treasure_name)}, {literal(new_treasure.colour)}, {literal(new_treasure.age)},
+                {literal(new_treasure.cost_at_auction)}, {literal(new_treasure.shop_id)})
+            RETURNING *;
+        """
+
+        treasure_data = db.run(sql=insert_query)[0]
+        column_names = [c["name"] for c in db.columns]
+        formatted_data = dict(zip(column_names, treasure_data))
+        return {"treasure": formatted_data}
+    finally:
+        if db:
+            db.close()
 
 
 @app.exception_handler(DatabaseError)
