@@ -1,23 +1,23 @@
 '''This module is the entrypoint for the `Cat's Rare Treasures` FastAPI app.'''
 from fastapi import FastAPI, Request, HTTPException
 from db.connection import connect_to_db
-from pg8000.native import DatabaseError, identifier
+from pg8000.native import DatabaseError, identifier, literal
 
 
 app = FastAPI()
 
 
 @app.get("/api/treasures")
-def get_all_treasures(sort_by: str = "age", order: str = "asc"):
+def get_all_treasures(sort_by: str = "age", order: str = "asc", colour: str = None):
     if not sort_by:
         sort_by = "age"
     elif sort_by not in {"age", "cost_at_auction", "treasure_name"}:
-        raise HTTPException(status_code=400, detail=f"Invalid sort_by value ({sort_by}) provided")
+        handle_invalid_query("sort_by", sort_by)
     
     if not order:
         order = "ASC"
     elif order not in {"asc", "desc"}:
-        raise HTTPException(status_code=400, detail=f"Invalid order value ({order}) provided")
+        handle_invalid_query("order", order)
     
     db = None
     try:
@@ -28,9 +28,13 @@ def get_all_treasures(sort_by: str = "age", order: str = "asc"):
                 treasures.age, treasures.cost_at_auction, shops.shop_name
             FROM treasures
             JOIN shops ON treasures.shop_id = shops.shop_id
-            ORDER BY treasures.{identifier(sort_by)} {identifier(order)};
         """
+        if colour:
+            select_query += f"""WHERE colour = {literal(colour)}"""
+        select_query += f"""ORDER BY treasures.{identifier(sort_by)} {identifier(order)};"""
         treasures_data = db.run(sql=select_query)
+        if not treasures_data:
+            handle_invalid_query("colour", colour)
         column_names = [c["name"] for c in db.columns]
         formatted_data = [dict(zip(column_names, treasure)) for treasure in treasures_data]
         return {"treasures": formatted_data}
@@ -43,3 +47,6 @@ def get_all_treasures(sort_by: str = "age", order: str = "asc"):
 def handle_db_error(request: Request, exc: DatabaseError):
     print(exc)
     raise HTTPException(status_code=500, detail="Server error: logged for investigation")
+
+def handle_invalid_query(query_key, query_value):
+    raise HTTPException(status_code=400, detail=f"Invalid {query_key} value ({query_value}) provided")

@@ -81,6 +81,19 @@ class TestGetAllTreasures:
             assert type(treasure["cost_at_auction"]) == float
             assert type(treasure["shop_name"]) == str
         assert ages == sorted(ages, reverse=True)
+
+    def test_200_returns_treasures_filtered_by_specified_colour(self, client):
+        response = client.get("/api/treasures?colour=gold")
+        treasures = response.json()["treasures"]
+        assert response.status_code == 200
+        assert len(treasures) == 2
+        for treasure in treasures:
+            assert treasure["colour"] == "gold"
+            assert type(treasure["treasure_id"]) == int
+            assert type(treasure["treasure_name"]) == str
+            assert type(treasure["age"]) == int
+            assert type(treasure["cost_at_auction"]) == float
+            assert type(treasure["shop_name"]) == str
         
     """
     Error handling considerations for GET "/api/treasures" are tested below, except for:
@@ -128,6 +141,16 @@ class TestGetAllTreasures:
         assert response.status_code == 400
         assert response.json() == {
             "detail": "Invalid order value (notallowed) provided"
+        }
+
+    """
+    Colour parameter non-existent; custom 400 implemented
+    """
+    def test_400_if_specified_colour_does_not_exist(self, client):
+        response = client.get("/api/treasures?colour=notacolour")
+        assert response.status_code == 400
+        assert response.json() == {
+            "detail": "Invalid colour value (notacolour) provided"
         }
 
     """
