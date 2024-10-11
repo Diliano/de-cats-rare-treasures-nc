@@ -272,3 +272,66 @@ class TestPatchUpdateTreasurePrice:
                 "shop_id": 1
             }
         }
+
+    """
+    Error handling considerations for PATCH "/api/treasures/:treasure_id" are tested below:
+    """
+    """
+    Path is incorrect; 404 handled by FastAPI
+    """
+    def test_404_if_path_is_incorrect(self, client):
+        response = client.patch("/api/treasure/1", json={
+            "cost_at_auction": 15
+        })
+        assert response.status_code == 404
+
+    """
+    Method does not exist; 405 handled by FastAPI
+    """
+    def test_405_if_method_does_not_exist(self, client):
+        response = client.post("/api/treasures/1", json={
+            "cost_at_auction": 15
+        })
+        assert response.status_code == 405
+
+    """
+    Treasure ID parameter does not exist; custom 404 implemented
+    """
+    def test_custom_404_if_treasure_id_does_not_exist(self, client):
+        response = client.patch("/api/treasures/500", json={
+            "cost_at_auction": 15
+        })
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "No treasure found with given ID: 500"
+        }
+
+    """
+    422s handled by FastAPI
+    - new price is 0 or below
+    - request body is the wrong type
+    - request body is the correct type, but empty
+    - request body contains a key that is not allowed
+    - request body contains a value that is not the correct type
+    """
+    def test_422_for_invalid_request_body(self, client):
+        response = client.patch("/api/treasures/1", json={
+            "cost_at_auction": -50
+        })
+        assert response.status_code == 422
+
+        response = client.patch("/api/treasures/1", json="hi")
+        assert response.status_code == 422
+
+        response = client.patch("/api/treasures/1", json={})
+        assert response.status_code == 422  
+
+        response = client.patch("/api/treasures/1", json={
+            "colour": 15
+        })
+        assert response.status_code == 422
+
+        response = client.patch("/api/treasures/1", json={
+            "cost_at_auction": "fifteen"
+        })
+        assert response.status_code == 422

@@ -1,6 +1,6 @@
 '''This module is the entrypoint for the `Cat's Rare Treasures` FastAPI app.'''
 from fastapi import FastAPI, Request, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 from db.connection import connect_to_db
 from pg8000.native import DatabaseError, identifier, literal
@@ -96,7 +96,7 @@ def add_new_treasure(new_treasure: NewTreasure):
 
 
 class UpdatedTreasurePrice(BaseModel):
-    cost_at_auction: float
+    cost_at_auction: float = Field(gt=0)
 
 @app.patch("/api/treasures/{treasure_id}")
 def update_treasure_price(treasure_id: int, updated_treasure_price: UpdatedTreasurePrice):
@@ -115,6 +115,8 @@ def update_treasure_price(treasure_id: int, updated_treasure_price: UpdatedTreas
         column_names = [c["name"] for c in db.columns]
         formatted_data = dict(zip(column_names, treasure_data))
         return {"treasure": formatted_data}
+    except IndexError:
+        raise HTTPException(status_code=404, detail=f"No treasure found with given ID: {treasure_id}")
     finally:    
         if db:
             db.close()
