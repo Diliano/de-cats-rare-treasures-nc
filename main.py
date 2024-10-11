@@ -1,5 +1,6 @@
 '''This module is the entrypoint for the `Cat's Rare Treasures` FastAPI app.'''
 from fastapi import FastAPI, Request, HTTPException
+from pydantic import BaseModel
 from db.connection import connect_to_db
 from pg8000.native import DatabaseError, identifier, literal
 
@@ -41,13 +42,39 @@ def get_all_treasures(sort_by: str = "age", order: str = "asc", colour: str = No
 
         if not treasures_data:
             handle_invalid_query("colour", colour)
-            
+
         column_names = [c["name"] for c in db.columns]
         formatted_data = [dict(zip(column_names, treasure)) for treasure in treasures_data]
         return {"treasures": formatted_data}
     finally:
         if db:
             db.close()
+
+
+class NewTreasure(BaseModel):
+    treasure_name: str
+    colour: str
+    age: int
+    cost_at_auction: float
+    shop_id: int
+
+@app.post("/api/treasures", status_code=201)
+def add_new_treasure(new_treasure: NewTreasure):
+    db = connect_to_db()
+
+    insert_query = f"""
+        INSERT INTO treasures
+            (treasure_name, colour, age, cost_at_auction, shop_id)
+        VALUES
+            ({literal(new_treasure.treasure_name)}, {literal(new_treasure.colour)}, {literal(new_treasure.age)},
+            {literal(new_treasure.cost_at_auction)}, {literal(new_treasure.shop_id)})
+        RETURNING *;
+    """
+
+    treasure_data = db.run(sql=insert_query)[0]
+    column_names = [c["name"] for c in db.columns]
+    formatted_data = dict(zip(column_names, treasure_data))
+    return {"treasure": formatted_data}
 
 
 @app.exception_handler(DatabaseError)

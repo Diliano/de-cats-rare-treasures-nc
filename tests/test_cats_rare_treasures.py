@@ -9,6 +9,8 @@ import pytest
 @pytest.fixture(autouse=True)
 def reset_db():
     seed_db(env='test')
+    yield
+    seed_db(env='test')
 
 @pytest.fixture()
 def client():
@@ -166,4 +168,31 @@ class TestGetAllTreasures:
         assert response.status_code == 500
         assert response.json() == {
             "detail": "Server error: logged for investigation"
+        }
+
+
+class TestPostNewTreasure:
+    def test_200_adds_new_treasure(self, client):
+        """
+        Test verifies:
+        - status code
+        - response contains newly generated treasure_id
+        """
+        response = client.post("/api/treasures", json={
+            "treasure_name": "new-treasure",
+            "colour": "saffron",
+            "age": 30,
+            "cost_at_auction": "70.99",
+            "shop_id": 4
+        })
+        assert response.status_code == 201
+        assert response.json() == {
+            "treasure": {
+                "treasure_id": 27,
+                "treasure_name": "new-treasure",
+                "colour": "saffron",
+                "age": 30,
+                "cost_at_auction": 70.99,
+                "shop_id": 4
+            }
         }
