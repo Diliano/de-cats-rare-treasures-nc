@@ -335,3 +335,18 @@ class TestPatchUpdateTreasurePrice:
             "cost_at_auction": "fifteen"
         })
         assert response.status_code == 422
+
+
+class TestDeleteTreasure:
+    def test_204_treasure_has_been_deleted(self, client):
+        """
+        Test verifies:
+        - status code
+        - remaining treasure data does not contain a record with the id of the deleted treasure
+        """
+        response = client.delete("/api/treasures/1")
+        assert response.status_code == 204
+
+        response = client.get("/api/treasures")
+        treasures = response.json()["treasures"]
+        assert any(treasure["treasure_id"] == 1 for treasure in treasures) is False

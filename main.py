@@ -122,6 +122,17 @@ def update_treasure_price(treasure_id: int, updated_treasure_price: UpdatedTreas
             db.close()
 
 
+@app.delete("/api/treasures/{treasure_id}", status_code=204)
+def delete_treasure(treasure_id: int):
+    db = None
+    try:
+        db = connect_to_db()
+        db.run(f"""DELETE FROM treasures WHERE treasure_id = {literal(treasure_id)}""")
+    finally:
+        if db:
+            db.close()
+
+
 @app.exception_handler(DatabaseError)
 def handle_db_error(request: Request, exc: DatabaseError):
     print(exc)
