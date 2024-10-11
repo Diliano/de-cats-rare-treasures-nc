@@ -127,7 +127,11 @@ def delete_treasure(treasure_id: int):
     db = None
     try:
         db = connect_to_db()
-        db.run(f"""DELETE FROM treasures WHERE treasure_id = {literal(treasure_id)}""")
+
+        query_return = db.run(f"""DELETE FROM treasures WHERE treasure_id = {literal(treasure_id)} RETURNING *;""")
+        
+        if not query_return:
+            raise HTTPException(status_code=404, detail=f"No treasure found with given ID: {treasure_id}")
     finally:
         if db:
             db.close()

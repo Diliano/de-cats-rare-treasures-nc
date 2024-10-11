@@ -350,3 +350,31 @@ class TestDeleteTreasure:
         response = client.get("/api/treasures")
         treasures = response.json()["treasures"]
         assert any(treasure["treasure_id"] == 1 for treasure in treasures) is False
+
+    """
+    Error handling considerations for the DELETE "/api/treasures/:treasure_id are below, except for:
+    - Method does not exist; tested above for PATCH "/api/treasures/:treasure_id" as base endpoint is the same
+    """
+    """
+    Path is invalid; 404 handled by FastAPI
+    """
+    def test_404_if_path_is_invalid(self, client):
+        response = client.delete("/api/treasure/1")
+        assert response.status_code == 404
+
+    """
+    Treasure parameter does not exist; custom 404 implemented
+    """
+    def test_404_if_treasure_does_not_exist(self, client):
+        response = client.delete("/api/treasures/50")
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "No treasure found with given ID: 50"
+        }
+
+    """
+    Parameter is wrong type; 422 handled by FastAPI
+    """
+    def test_422_if_parameter_is_wrong_type(self, client):
+        response = client.delete("/api/treasures/one")
+        assert response.status_code == 422
