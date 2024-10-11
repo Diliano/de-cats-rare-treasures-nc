@@ -20,8 +20,10 @@ def get_all_treasures(sort_by: str = "age", order: str = "asc", colour: str = No
         handle_invalid_query("order", order)
     
     db = None
+
     try:
         db = connect_to_db()
+
         select_query = f"""
             SELECT 
                 treasures.treasure_id, treasures.treasure_name, treasures.colour,
@@ -29,12 +31,17 @@ def get_all_treasures(sort_by: str = "age", order: str = "asc", colour: str = No
             FROM treasures
             JOIN shops ON treasures.shop_id = shops.shop_id
         """
+
         if colour:
             select_query += f"""WHERE colour = {literal(colour)}"""
+
         select_query += f"""ORDER BY treasures.{identifier(sort_by)} {identifier(order)};"""
+
         treasures_data = db.run(sql=select_query)
+
         if not treasures_data:
             handle_invalid_query("colour", colour)
+            
         column_names = [c["name"] for c in db.columns]
         formatted_data = [dict(zip(column_names, treasure)) for treasure in treasures_data]
         return {"treasures": formatted_data}
