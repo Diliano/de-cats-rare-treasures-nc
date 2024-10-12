@@ -129,9 +129,35 @@ def delete_treasure(treasure_id: int):
         db = connect_to_db()
 
         query_return = db.run(f"""DELETE FROM treasures WHERE treasure_id = {literal(treasure_id)} RETURNING *;""")
-        
+
         if not query_return:
             raise HTTPException(status_code=404, detail=f"No treasure found with given ID: {treasure_id}")
+    finally:
+        if db:
+            db.close()
+
+
+@app.get("/api/shops")
+def get_all_shops():
+    db = None
+    try:
+        db = connect_to_db()
+
+        select_query = f"""
+            SELECT 
+                shops.shop_id, shops.shop_name, shops.slogan, SUM(treasures.cost_at_auction) AS stock_value
+            FROM shops
+            JOIN treasures ON shops.shop_id = treasures.shop_id
+            GROUP BY shops.shop_id
+            ORDER by shops.shop_id;
+        """
+
+        shops_data = db.run(sql=select_query)
+        print(shops_data)
+        column_names = [c["name"] for c in db.columns]
+        print(column_names)
+        formatted_data = [dict(zip(column_names, shop)) for shop in shops_data]
+        return {"shops": formatted_data}
     finally:
         if db:
             db.close()

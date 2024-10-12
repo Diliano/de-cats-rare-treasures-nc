@@ -378,3 +378,19 @@ class TestDeleteTreasure:
     def test_422_if_parameter_is_wrong_type(self, client):
         response = client.delete("/api/treasures/one")
         assert response.status_code == 422
+
+
+class TestGetAllShops:
+    def test_200_returns_formatted_treasures(self, client):
+        response = client.get("/api/shops")
+        shops = response.json()["shops"]
+        assert response.status_code == 200
+        assert len(shops) == 11
+        for shop in shops:
+            assert type(shop["shop_id"]) ==  int
+            assert type(shop["shop_name"]) == str
+            assert type(shop["slogan"]) == str
+            assert type(shop["stock_value"]) ==  float
+        assert shops[0]["stock_value"] == 2421.98
+        assert shops[1]["stock_value"] == 1015.98
+        
