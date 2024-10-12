@@ -153,9 +153,7 @@ def get_all_shops():
         """
 
         shops_data = db.run(sql=select_query)
-        print(shops_data)
         column_names = [c["name"] for c in db.columns]
-        print(column_names)
         formatted_data = [dict(zip(column_names, shop)) for shop in shops_data]
         return {"shops": formatted_data}
     finally:

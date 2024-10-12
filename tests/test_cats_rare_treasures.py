@@ -382,6 +382,13 @@ class TestDeleteTreasure:
 
 class TestGetAllShops:
     def test_200_returns_formatted_treasures(self, client):
+        """
+        Test verifies:
+        - status code
+        - length of resulting list of shop dicts
+        - shop dicts content match the data types expected
+        - correctness of stock value for the first two shops
+        """
         response = client.get("/api/shops")
         shops = response.json()["shops"]
         assert response.status_code == 200
@@ -393,4 +400,20 @@ class TestGetAllShops:
             assert type(shop["stock_value"]) ==  float
         assert shops[0]["stock_value"] == 2421.98
         assert shops[1]["stock_value"] == 1015.98
-        
+
+    """
+    Error handling considerations for the GET /api/shops endpoint are tested below:
+    """
+    """
+    Path is incorrect; 404 handled by FastAPI
+    """
+    def test_404_if_path_is_incorrect(self, client):
+        response = client.get("/api/shop")
+        assert response.status_code == 404
+
+    """
+    Method not allowed; 405 handled by FastAPI
+    """
+    def test_405_if_method_not_allowed(self, client):
+        response = client.delete("/api/shops")
+        assert response.status_code == 405
